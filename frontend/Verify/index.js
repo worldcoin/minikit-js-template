@@ -1,22 +1,31 @@
 import {
   MiniKit,
-  VerificationLevel,
-} from "https://cdn.jsdelivr.net/npm/@worldcoin/minikit-js@0.0.38-internal-alpha/+esm";
+  MiniAppVerifyActionErrorPayload,
+  IVerifyResponse,
+} from "@worldcoin/minikit-js";
+import { useCallback, useState } from "react";
 
-const test_verifyPayload = {
-  action: "test-action", // This is your action ID from the Developer Portal
-  signal: "",
-  verification_level: VerificationLevel.Orb, // Orb | Device
-};
+export const VerifyBlock = () => {
+  const [handleVerifyResponse, setHandleVerifyResponse] =
+    (useState < MiniAppVerifyActionErrorPayload) |
+    IVerifyResponse |
+    (null > null);
 
-document.addEventListener("DOMContentLoaded", function () {
-  if (!MiniKit.isInstalled()) {
-    return;
-  }
+  const handleVerify = useCallback(async () => {
+    if (!MiniKit.isInstalled()) {
+      console.warn("Tried to invoke 'verify', but MiniKit is not installed.");
+      return null;
+    }
 
-  const handleResponse = async (response) => {
-    if (response.status === "error") {
-      return console.log("Error payload", response);
+    const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload);
+
+    // no need to verify if command errored
+    if (finalPayload.status === "error") {
+      console.log("Command error");
+      console.log(finalPayload);
+
+      setHandleVerifyResponse(finalPayload);
+      return finalPayload;
     }
 
     // Verify the proof in the backend
@@ -28,29 +37,32 @@ document.addEventListener("DOMContentLoaded", function () {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          payload: response, // Parses only the fields we need to verify
-          action: test_verifyPayload.action,
-          signal: test_verifyPayload.signal, // Optional
+          payload: finalPayload,
+          action: verifyPayload.action,
+          signal: verifyPayload.signal, // Optional
         }),
       }
     );
 
     // TODO: Handle Success!
     const verifyResponseJson = await verifyResponse.json();
+
     if (verifyResponseJson.status === 200) {
       console.log("Verification success!");
+      console.log(finalPayload);
     }
-  };
 
-  MiniKit.subscribe(ResponseEvent.MiniAppVerifyAction, handleResponse);
+    setHandleVerifyResponse(verifyResponseJson);
+    return verifyResponseJson;
+  }, []);
 
-  window.addEventListener("unload", function () {
-    MiniKit.unsubscribe(ResponseEvent.MiniAppVerifyAction);
-  });
-});
-
-const triggerVerify = () => {
-  MiniKit.commands.verify(test_verifyPayload);
+  return (
+    <div>
+      <h1>Verify Block</h1>
+      <button className="bg-green-500 p-4" onClick={handleVerify}>
+        Test Verify
+      </button>
+      <span>{JSON.stringify(handleVerifyResponse, null, 2)}</span>
+    </div>
+  );
 };
-
-document.querySelector("#test-verify").addEventListener("click", triggerVerify);
