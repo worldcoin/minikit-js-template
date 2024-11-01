@@ -9,7 +9,7 @@
     "a": "tsx --help"
   },
   "dependencies": {
-    "@worldcoin/minikit-js": "0.0.31-internal-alpha",
+    "@worldcoin/minikit-js": "1.1.1",
     "cors": "^2.8.5",
     "express": "^4.21.0",
     "node-fetch": "^3.3.2",
